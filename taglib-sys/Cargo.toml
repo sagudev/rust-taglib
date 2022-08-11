@@ -20,7 +20,7 @@ libc = "0.2"
 num_cpus   = "1"
 cc         = "1.0"
 pkg-config = "0.3"
-bindgen    = { version = "0.60", default-features = false, features = ["runtime"] }
+bindgen    = { version = "0.60", features = ["runtime"] }
 cmake = "0.1"
 
 [target.'cfg(target_env = "msvc")'.build-dependencies]

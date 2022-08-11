@@ -168,19 +168,22 @@ fn main() {
         .iter()
         .map(|include| format!("-I{}", include.to_string_lossy()));
 
+    println!("{}", search_include(&include_paths, "taglib.h"));
+
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for
     // the resulting bindings.
     let builder = bindgen::Builder::default()
-        .clang_args(clang_includes)
-        .clang_arg("-x c++")
-        .clang_arg("-std=c++14")
-        .ctypes_prefix("libc")
-        .rustified_enum("*")
-        .prepend_enum_name(false)
-        .derive_eq(true)
-        .size_t_is_usize(true)
-        .header(search_include(&include_paths, "taglib.h"));
+        //.clang_args(clang_includes)
+        .enable_cxx_namespaces()
+        //.clang_arg("-std=c++14")
+        //.ctypes_prefix("libc")
+        //.rustified_enum("*")
+        //.prepend_enum_name(false)
+        //.derive_eq(true)
+        //.size_t_is_usize(true)
+        .header(search_include(&include_paths, "taglib.h"))
+        .clang_arg("-x c++");
 
     //builder = builder
     //.header(search_include(&include_paths, "taglib.h"))
