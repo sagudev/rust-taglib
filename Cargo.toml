@@ -1,25 +1,25 @@
 [package]
-name = "taglib"
+name = "taglib-next"
 description = "Rust bindings for TagLib"
-version = "1.0.0"
-authors = ["Emmanuele Bassi <ebassi@gnome.org>", "Chris Down <chris@chrisdown.name>"]
+version = "0.0.0"
+authors = ["Emmanuele Bassi <ebassi@gnome.org>", "Chris Down <chris@chrisdown.name>", "sagudev"]
 license = "MIT"
-repository = "https://github.com/ebassi/taglib-rust/"
+repository = "https://github.com/sagudev/rust-taglib/"
 keywords = ["taglib", "media", "tags", "metadata"]
 homepage = "http://ebassi.github.io/taglib-rust/"
 documentation = "http://ebassi.github.io/taglib-rust/docs/taglib/"
+edition = "2021"
 
 [lib]
-name = "taglib"
+name = "taglib_next"
 path = "src/lib.rs"
 
 [dependencies]
 libc = "0.2"
 
-[dependencies.taglib-sys]
+[dependencies.taglib-sys-next]
 path = "taglib-sys"
-version = "1.0.0"
+version = "*"
 
 [features]
 default = []
-use-pkgconfig = ["taglib-sys/use-pkgconfig"]

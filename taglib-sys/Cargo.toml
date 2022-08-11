@@ -1,24 +1,34 @@
 [package]
-name = "taglib-sys"
-description = "Raw TagLib bindings for Rust, used internally by TagLib-Rust"
-version = "1.0.0"
-authors = ["Emmanuele Bassi <ebassi@gnome.org>", "Chris Down <chris@chrisdown.name>"]
-repository = "https://github.com/ebassi/taglib-rust"
+name = "taglib-sys-next"
+description = "Raw TagLib bindings for Rust"
+version = "0.0.0"
+authors = ["Emmanuele Bassi <ebassi@gnome.org>", "Chris Down <chris@chrisdown.name>", "sagudev"]
+repository = "https://github.com/sagudev/rust-taglib"
 license = "MIT"
 links = "tag_c"
 build = "build.rs"
+edition = "2021"
 
 [lib]
-name = "taglib_sys"
+name = "taglib_sys_next"
 path = "src/lib.rs"
 
 [dependencies]
 libc = "0.2"
 
-[build-dependencies.pkg-config]
-version = "0.3"
-optional = true
+[build-dependencies]
+num_cpus   = "1"
+cc         = "1.0"
+pkg-config = "0.3"
+bindgen    = { version = "0.60", default-features = false, features = ["runtime"] }
+cmake = "0.1"
+
+[target.'cfg(target_env = "msvc")'.build-dependencies]
+vcpkg = "0.2"
 
 [features]
 default = []
-use-pkgconfig = ["pkg-config"]
+static = []
+build  = ["static"]
+taglib112 = ["build"]
+taglib1xx = ["build"]
