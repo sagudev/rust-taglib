@@ -36,14 +36,6 @@ fn source() -> PathBuf {
     output().join(build_folder())
 }
 
-fn search() -> PathBuf {
-    let mut absolute = env::current_dir().unwrap();
-    absolute.push(&output());
-    absolute.push("dist");
-
-    absolute
-}
-
 fn fetch() -> io::Result<()> {
     let output_base_path = output();
     let clone_dest_dir = build_folder();
@@ -55,7 +47,7 @@ fn fetch() -> io::Result<()> {
             .arg("--depth=1")
             .arg("-b")
             .arg("v1.12")
-            .arg("-single-branch")
+            .arg("--single-branch")
             .arg("https://github.com/taglib/taglib")
             .arg(&clone_dest_dir)
             .status()?
@@ -95,14 +87,15 @@ fn try_vcpkg(statik: bool) -> Option<Vec<PathBuf>> {
         .ok()
 }
 
-fn search_include(include_paths: &[PathBuf], header: &str) -> String {
+fn search_include(include_paths: &[PathBuf], header: &str) -> Option<String> {
     for dir in include_paths {
         let include = dir.join(header);
+        println!("{}", include.display());
         if fs::metadata(&include).is_ok() {
-            return include.as_path().to_str().unwrap().to_string();
+            return Some(include.as_path().to_str().unwrap().to_string());
         }
     }
-    format!("/usr/include/{}", header)
+    None
 }
 
 fn link_to_libraries(statik: bool) {
@@ -118,24 +111,19 @@ fn main() {
 
     // user requested to build
     let include_paths: Vec<PathBuf> = if env::var("CARGO_FEATURE_BUILD").is_ok() {
-        println!(
-            "cargo:rustc-link-search=native={}",
-            search().join("lib").to_string_lossy()
-        );
         link_to_libraries(statik);
         // check if we have built it
-        if fs::metadata(&search().join("lib").join("libtag.a")).is_err() {
+        if fs::metadata(&source()).is_err() {
             fs::create_dir_all(&output()).expect("failed to create build directory");
             fetch().unwrap();
-            let dst = Config::new(source())
-                .define("BUILD_SHARED_LIBS", "OFF")
-                .define("ENABLE_STATIC_RUNTIME", "ON")
-                .define("CMAKE_BUILD_TYPE", "Release")
-                .build();
-            println!("cargo:rustc-link-search=native={}", dst.display());
         }
-
-        vec![search().join("include")]
+        let dst = Config::new(source())
+            .define("BUILD_SHARED_LIBS", "OFF")
+            .define("ENABLE_STATIC_RUNTIME", "ON")
+            //.define("CMAKE_BUILD_TYPE", "Release")
+            .build();
+        println!("cargo:rustc-link-search=native={}", dst.display());
+        vec![dst.join("include").join("taglib")]
     } else if let Some(paths) = try_vcpkg(statik) {
         // vcpkg doesn't detect the "system" dependencies
         if statik {
@@ -168,37 +156,27 @@ fn main() {
         .iter()
         .map(|include| format!("-I{}", include.to_string_lossy()));
 
-    println!("{}", search_include(&include_paths, "taglib.h"));
-
-    // The bindgen::Builder is the main entry point
-    // to bindgen, and lets you build up options for
-    // the resulting bindings.
-    let builder = bindgen::Builder::default()
-        //.clang_args(clang_includes)
+    let bindings = bindgen::Builder::default()
+        .header("src/wrapper.hpp")
+        .clang_args(clang_includes)
         .enable_cxx_namespaces()
-        //.clang_arg("-std=c++14")
-        //.ctypes_prefix("libc")
-        //.rustified_enum("*")
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .clang_arg("-std=c++14")
+        .ctypes_prefix("libc")
+        .rustified_enum("*")
         //.prepend_enum_name(false)
         //.derive_eq(true)
-        //.size_t_is_usize(true)
-        .header(search_include(&include_paths, "taglib.h"))
-        .clang_arg("-x c++");
-
-    //builder = builder
-    //.header(search_include(&include_paths, "taglib.h"))
-    // Here until https://github.com/rust-lang/rust-bindgen/issues/2192 /
-    // https://github.com/rust-lang/rust-bindgen/issues/258 is fixed.
-    //.header("channel_layout_fixed.h");
-
-    // Finish the builder and generate the bindings.
-    let bindings = builder
+        .size_t_is_usize(true)
+        .opaque_type("std::.*")
+        //.clang_arg("-x c++")
+        // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.
         .expect("Unable to generate bindings");
 
     // Write the bindings to the $OUT_DIR/bindings.rs file.
+    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     bindings
-        .write_to_file(output().join("bindings.rs"))
+        .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
 }

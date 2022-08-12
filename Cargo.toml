@@ -19,7 +19,10 @@ libc = "0.2"
 
 [dependencies.taglib-sys-next]
 path = "taglib-sys"
-version = "*"
+#version = "0.0.0"
 
 [features]
 default = []
+static = ["taglib-sys-next/static"]
+taglib112 = ["taglib-sys-next/taglib112"]
+taglib1xx = ["taglib-sys-next/taglib1xx"]
